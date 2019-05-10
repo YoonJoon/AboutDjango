@@ -155,5 +155,5 @@ Django에 대한 이 튜토리얼의 다음 단계와 마지막 단계는 [asses
 -	[Django 튜토리얼 8부: 사용자 인증과 권한관리](authentication.md)
 -	[Django 튜토리얼 9부: 양식](forms.md)
 -	[Django 튜토리얼 10부: Django 웹 응용프로그램 테스팅](testing.md)
--	[Django 튜토리얼 11부: 프로덕션으로 Django 전개](deployment.md)
+-	[Django 튜토리얼 11부: 프로덕션으로 Django 배치](deployment.md)
 -	[Django 웹 응용프로그램 보안](webApplicationSecurity.md)
