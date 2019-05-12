@@ -1,4 +1,6 @@
-# About Django
+About Django
+============
+
 Django Web Framework (Python)
 
 이 문서는 저작자 동의없이 KAIST 대학정보화사업팀을 위하여 [Django Web Framework](https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django)를 번역 편집하여 작성한 것입니다.
@@ -17,7 +19,7 @@ Django Web Framework (Python)
 -	[Django 튜토리얼 8부: 사용자 인증과 권한관리](authentication.md)
 -	[Django 튜토리얼 9부: 양식](forms.md)
 -	[Django 튜토리얼 10부: Django 웹 응용프로그램 테스팅](testing.md)
--	[Django 튜토리얼 11부: 프로덕션으로 Django 전개](deployment.md)
--	[Django 웹 응용프로그램 보안](webApplicationSecurity.md)
+-	[Django 튜토리얼 11부: 프로덕션으로 Django 배치](deployment.md)
+-	[Django 웹 어플리케이션 보안](webApplicationSecurity.md)
 
-Python과 Django를 이용하여 web service를 구축하는데 도움이 되길 바랍니다.
+Python과 Django를 이용하여 web service를 구축하는데 도움이 되길 바랍니다. [Django Web Framework (Python) 개요](overview.md)에서부터 시작하십시오.
