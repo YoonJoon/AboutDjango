@@ -11,7 +11,7 @@ Django 웹 애플리케이션 보안
 
 ### 개요
 
-[Website security](https://developer.mozilla.org/en-US/docs/Web/Security)에서는 서버 사이드 설계를 위한 웹사이트 보안의 의미와 보호해야 할 일반적인 위협에 대한 개요를 다룹니다. 이 단원의 주요 메시지 중 하나는 웹 애플리케이션이 브라우저의 데이터를 신뢰하면 거의 모든 공격이 성공한다는 것입니다.
+[Website security](https://developer.mozilla.org/en-US/docs/Web/Security)에서는 서버 사이드 설계를 위한 웹사이트 보안의 의미와 보호해야 할 일반적인 위협에 대한 개요를 다룹니다. 이 단원의 주요 메시지 중 하나는 웹 어플리케이션이 브라우저의 데이터를 신뢰하면 거의 모든 공격이 성공한다는 것입니다.
 
 > **Important**: 웹사이트 보안에 대해 배울 수 있는 가장 중요한 교훈은 브라우저가 전송한 데이터를 절대 신뢰하지 않는 것입니다. URL 매개 변수 중 GET 요청 데이터, POST 데이터, HTTP 헤더와 쿠키, 사용자 업로드 파일 등이 이에 해당됩니다. 모든 입력 데이터를 항상 확인하고 안전하게 만들어야 합니다. 항상 최악의 상황을 가정합니다.
 
@@ -29,7 +29,7 @@ XSS는 공격자가 웹사이트를 <i>통해</i> 클라이언트 사이드 스�
 
 Django의 템플리트 시스템은 HTML에서 "위험한" [특정 문자를 이스케이프](https://docs.djangoproject.com/en/2.0/ref/templates/language/#automatic-html-escaping) 처리하여 대다수의 XSS 공격으로부터 사용자를 보호합니다. [Django 튜토리얼 9부: 양식 작업](forms.md)에서 Create-author 양식을 사용하여 LocalLibrary 웹사이트에 JavaScript를 삽입하여 이를 시연할 수 있습니다.
 
-1.	개발 서버를 사용하여 웹 사이트를 시작하십시오 (<code>python3 manage.py runserver</code>).
+1.	개발 서버를 사용하여 웹사이트를 시작하십시오 (<code>python3 manage.py runserver</code>).
 2.	로컬 브라우저에서 사이트를 열고 수퍼유저 계정으로 로그인하십시오.
 3.	author-creation page (URL: http://127.0.0.1:8000/catalog/author/create/)로 이동하십시오.
 4.	새로운 사용자의 이름과 날짜 정보를 입력한 다음 Last Name 필드에 다음 텍스트를 추가하십시오. <code>\<script>alert('Test alert');\</script></code>
@@ -156,4 +156,4 @@ Django에 대한 이 튜토리얼의 다음 단계와 마지막 단계는 [asses
 -	[Django 튜토리얼 9부: 양식](forms.md)
 -	[Django 튜토리얼 10부: Django 웹 응용프로그램 테스팅](testing.md)
 -	[Django 튜토리얼 11부: 프로덕션으로 Django 배치](deployment.md)
--	[Django 웹 응용프로그램 보안](webApplicationSecurity.md)
+-	[Django 웹  보안](webApplicationSecurity.md)
