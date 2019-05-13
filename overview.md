@@ -9,7 +9,7 @@ Django는 Python으로 작성된 매우 인기 있고 완벽한 기능을 갖춘
 
 ### 선수지식
 
-시작하기 위하여 Django에 대한 많은 지식이 필요하지 않습니다. [서버사이드 웹 프로그래밍 첫 걸음](../AboutServersidewebProgrammingFirststep/)를 읽고 서버사이드 웹 프로그래밍과 웹 프레임워크에 대한 이해가 필요합니다.
+시작하기 위하여 Django에 대한 많은 지식이 필요하지 않습니다. [서버사이드 웹 프로그래밍 첫 걸음](https://github.com/YoonJoon/AboutServersideWebProgrammingFirstStep)를 읽고 서버사이드 웹 프로그래밍과 웹 프레임워크에 대한 이해가 필요합니다.
 
 프로그래밍 개념과 Python에 대한 일반적인 지식을 권장하지만 핵심 개념을 이해하기 위하여 반드시 필요한 것은 아닙니다.
 
