@@ -385,7 +385,7 @@ Quit the server with CONTROL-C.
 
 ---
 
-### 더 보기
+### 참고 문서
 
 -	[Quick Install Guide](https://docs.djangoproject.com/en/2.1/intro/install/) (Django docs)
 -	[How to install Django — Complete guide](https://docs.djangoproject.com/en/2.1/topics/install/) (Django docs) - Django를 제거하는 방법에 대한 정보가 있습니다.
