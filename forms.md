@@ -165,7 +165,7 @@ class RenewBookForm(forms.Form):
         return data
 ```
 
-유의해야 할 두 가지 주요 사항이 있습니다. 첫 번째는 <code>self.cleaned\_data[ 'renewal\_date' ]</code>를 사용하여 데이터를 얻고 함수의 끝에서 데이터 변경 여부에 무관하게 이를 반환한다는 것입니다. 이 단계에서 기본 유효성 검사기를 사용하여 잠재적으로 안전하지 않은 입력을 "정리"하고 유효한 데이터를 가져 와서 데이터의 올바른 표준 유형 (이 경우 Python <code>datetime.datetime</code> 객체)으로 변환합니다.
+유의해야 할 두 가지 주요 사항이 있습니다. 첫 번째는 <code>self.cleaned\_data['renewal\_date']</code>를 사용하여 데이터를 얻고 함수의 끝에서 데이터 변경 여부에 무관하게 이를 반환한다는 것입니다. 이 단계에서 기본 유효성 검사기를 사용하여 잠재적으로 안전하지 않은 입력을 "정리"하고 유효한 데이터를 가져 와서 데이터의 올바른 표준 유형 (이 경우 Python <code>datetime.datetime</code> 객체)으로 변환합니다.
 
 두 번째는 값이 범위를 벗어나 유효하지 않은 값이 입력될 경우 양식에 표시할 오류 텍스트를 지정하여 <code>ValidationError</code>를 발생시키는 것입니다. 위의 예제는 [Django 번역 함수](https://docs.djangoproject.com/en/2.1/topics/i18n/translation/) <code>ugettext\_lazy()</code> (<code>\_()</code>로 임포트) 중 하나에 이 텍스트를 래핑합니다. 이는 향후 사이트를 번역하는 경우 적합합니다.
 
