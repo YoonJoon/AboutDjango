@@ -1,11 +1,11 @@
 Django 튜토리얼 8부: 사용자 인증 및 사용 권한
 ---------------------------------------------
 
-이 문서는 저작자 동의없이 KAIST 대학정보화사업팀을 위하여 [Django Tutorial Part 8: User authentication and permissions](https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django/Authentication)를 번역 편집하여 작성한 것입니다.
+---
 
-이 단계에서는 사용자가 자신의 계정으로 사이트에 로그인 할 수 있도록 하는 방법과 로그인 여부 및 사용 권한에 따라 수행하고 볼 수있는 권한 제어 방법을 설명합니다. 이 데모의 일부로 [LocalLibrary](tutorialLocalLibraryWebsite.md) 웹사이트를 확장하여 로그인 및 로그아웃 페이지를 추가하고 대출한 책을 볼 수 있는 사용자 및 사서 페이지를 확장합니다.
+이 단원에서는 사용자가 자신의 계정으로 사이트에 로그인 할 수 있도록 하는 방법과 로그인 여부 및 사용 권한에 따라 수행하고 볼 수있는 권한 제어 방법을 설명합니다. 이 데모의 일부로 [LocalLibrary](tutorialLocalLibraryWebsite.md) 웹사이트를 확장하여 로그인 및 로그아웃 페이지를 추가하고 대출한 책을 볼 수 있는 사용자 및 사서 페이지를 확장합니다.
 
-> 선수지식: [Django 튜토리얼 7부: 세션 프레임워크](sessions.md)까지 모든 튜토리얼들을 숙지하여야 합니다.
+> 선수지식: [Django 튜토리얼 7부: 세션 프레임워크](sessions.md)까지 모든 튜토리얼들을 숙지하고 있어야 합니다.
 >
 > 목표: 사용자 인증 및 사용 권한을 설정하고 사용하는 방법을 이해합니다.
 
@@ -13,11 +13,11 @@ Django 튜토리얼 8부: 사용자 인증 및 사용 권한
 
 ### 개요
 
-Django는 사용자 인증 정보를 확인하고 각 사용자가 수행할 수있는 작업을 정의할 수 있는 [이전 단계](session.md)에서 설명한 세션 프레임워크 위에서 구축된 인증 및 권한 부여 ("허가") 시스템을 제공합니다. 프레임워크는 <code>Users</code>와 <code>Groups</code> (한 번에 둘 이상의 사용자에게 사용 권한을 적용하는 일반적인 방법), 사용자가 작업을 수행 가능 여부를 지정하는 허가/플래그, 사용자 로그인 양식과 뷰 및 컨텐츠를 제한하기 위한 뷰 도구에 대한 내재된 모델을 포함하고 있습니다.
+Django는 사용자 인증 정보를 확인하고 각 사용자가 수행할 수있는 작업을 정의할 수 있는 [이전 단계](sessions.md)에서 설명한 세션 프레임워크 위에서 구축된 인증 및 권한 부여 ("허가") 시스템을 제공합니다. 프레임워크는 <code>Users</code>와 <code>Groups</code> (한 번에 둘 이상의 사용자에게 사용 권한을 적용하는 일반적인 방법), 사용자가 작업을 수행 가능 여부를 지정하는 허가/플래그, 사용자 로그인 양식과 뷰 및 컨텐츠를 제한하기 위한 뷰 도구에 대한 내재된 모델을 포함하고 있습니다.
 
-> <b>Note</b>: Django는 제네릭한 인증 시스템을 목표로하므로 다른 웹 인증 시스템에서 제공하는 일부 기능을 제공하지 않습니다. 일부 공통 문제에 대한 솔루션은 타사 패키지로 제공됩니다. 예를 들어 로그인 시도 제한, 제 3자 인증(예 : OAuth) 등입니다.
+> <b>Note</b>: Django는 제네릭한 인증 시스템을 목표로 하므로 다른 웹 인증 시스템에서 제공하는 일부 기능을 제공하지 않습니다. 일부 공통 문제에 대한 솔루션은 타사 패키지로 제공됩니다. 예를 들어 로그인 시도 제한, 제 3자 인증(예 : OAuth) 등입니다.
 
-이 단계에서는 [LocalLibrary](tutorialLocalLibraryWebsite.md) 웹사이트에서 사용자 인증을 활성화하고, 로그인 및 로그 아웃 페이지를 만들고, 모델에 권한을 부여하고, 페이지에 대한 접근를 제어하는 방법을 설명합니다. 사용자와 사서 모두가 빌린 도서 목록을 표시하기 위해 인증/권한을 사용합니다.
+이 단원에서는 [LocalLibrary](tutorialLocalLibraryWebsite.md) 웹사이트에서 사용자 인증을 활성화하고, 로그인 및 로그아웃 페이지를 만들고, 모델에 권한을 부여하고, 페이지에 대한 접근를 제어하는 방법을 설명합니다. 사용자와 사서 모두가 빌린 도서 목록을 표시하기 위해 인증/권한을 사용합니다.
 
 인증 시스템은 매우 유연하며 사용자를 로그인하기 위하여 제공되는 API를 호출하여 URL, 양식, 뷰와 템플리트를 처음부터 새로 만들 수 있습니다. 그러나 이 단계에서는 로그인과 로그아웃 페이지에 Django의 "stock" 인증 뷰와 양식을 사용하려고 합니다. 여전히 템플리트를 만들어야 하지만 어렵지 않습니다.
 
@@ -29,7 +29,7 @@ Django는 사용자 인증 정보를 확인하고 각 사용자가 수행할 수
 
 [Django 튜토리얼 2부: 웹사이트 골조 만들기](skeletonWebsite.md)에서 인증이 자동으로 활성화되었으므로 더 이상의 작업이 필요 없습니다.
 
-> <b>Note</b>: <code>django-admin startproject</code> 명령으로 응용 프로그램을 만들 때 필요한 구성을 모두 완료하였습니다. 사용자와 모델 권한에 대한 데이터베이스 테이블은 처음에 <code>python manage.py migrate</code>를 수행했을 때 만들어졌습니다.
+> <b>Note</b>: <code>django-admin startproject</code> 명령으로 어플리케이션을 만들 때 필요한 구성을 모두 완료하였습니다. 사용자와 모델 권한에 대한 데이터베이스 테이블은 처음에 <code>python manage.py migrate</code>를 수행했을 때 만들어졌습니다.
 
 프로젝트 파일(<b>locallibrary/locallibrary/settings.py</b>)의 <code>INSTALLED_APPS</code>와 <code>>MIDDLEWARE</code> 섹션에서 다음과 같이 구성을 설정합니다.
 
@@ -52,9 +52,9 @@ MIDDLEWARE = [
 
 ### 사용자와 그룹 생성
 
-[Django 튜토리얼 4부: Django 관리 사이트](adminSite.md)에서 이미 첫 번째 사용자를 만들었습니다 (이떄 수퍼유저로서 <code>python manage.py createsuperuser</code> 명령을 사용하여 만들었습니다). 수퍼유저는 이미 인증을 받았으며 모든 권한을 가지고 있으므로 일반 사용자 테스트 사용자를 만들어야 합니다. 가장 빠른 방법 중 하나로 <i>locallibrary</i> 그룹과 웹사이트 로그인을 만들기 위해 admin 사이트를 사용할 것입니다.
+[Django 튜토리얼 4부: Django 관리 사이트](adminSite.md)에서 이미 첫 번째 사용자를 만들었습니다 (이떄 수퍼유저로서 <code>python manage.py createsuperuser</code> 명령을 사용하여 만들었습니다). 수퍼유저는 이미 인증을 받았으며 모든 권한을 가지고 있으므로 일반 사용자를 대표하는 테스트 사용자를 만들어야 합니다. 가장 빠른 방법 중 하나로 <i>locallibrary</i> 그룹과 웹사이트 로그인을 만들기 위해 admin 사이트를 사용할 것입니다.
 
-> <b>Note</b>: 아래와 같이 프로그래밍으로 사용자를 만들 수도 있습니다. 예를 들어 사용자가 자신의 로그인을 만들 수있는 인터페이스를 개발하는 경우 (사용자에게 관리 사이트에 대한 접근 권한 부여를해서는 안 됨) 이 작업을 수행해야 합니다.
+> <b>Note</b>: 아래와 같이 프로그래밍으로 사용자를 만들 수도 있습니다. 예를 들어 사용자가 자신의 로그인을 만들 수 있는 인터페이스를 개발하는 경우 (사용자에게 관리 사이트에 대한 접근 권한 부여를 해서는 안 됨) 이 작업을 수행해야 합니다.
 
 ```python
 from django.contrib.auth.models import User
@@ -68,27 +68,30 @@ user.last_name = 'Citizen'
 user.save()
 ```
 
-아래에서 먼저 그룹을 만든 다음 사용자를 만듭니다. 아직 도서관 회원을 추가 할 수있는 권한이 없지만 나중에 필요할 경우 사용자 각각에 추가하는 것보다 훨씬 쉽게 그룹에 부여할 수 있습니다.
+아래에서 먼저 그룹을 만든 다음 사용자를 만듭니다. 아직 도서관 회원을 추가 할 수 있는 권한이 없지만 나중에 필요할 경우 사용자 각각에 추가하는 것보다 훨씬 쉽게 그룹에 추가할 수 있습니다.
 
-개발 서버를 시작하고 로컬 웹 브라우저에서 [관리 사이트](http://127.0.0.1:8000/admin/)로 이동하십시오. 수퍼유저 계정의 자격 증명을 사용하여 사이트에 로그인합니다. Admin 사이트의 최상위 레벨은 모든 모델을 "Django application"으로 정렬하여 보여줍니다. <b>Authentication and Authorisation</b> 섹션에서 <b>Users</b> 또는 <b>Groups</b> 링크를 클릭하여 기존 레코드를 볼 수 있습니다.
+개발 서버를 시작하고 로컬 웹 브라우저에서 [관리 사이트](http://127.0.0.1:8000/admin/)로 이동하십시오. 수퍼유저 계정의 자격 증명을 사용하여 사이트에 로그인합니다. Admin 사이트의 최상위 레벨에서 모든 모델을 "Django application"으로 정렬하여 보여줍니다. <b>Authentication and Authorisation</b> 섹션에서 <b>Users</b> 또는 <b>Groups</b> 링크를 클릭하여 기존 레코드를 볼 수 있습니다.
 
 ![](Pics/admin_authentication_add.png)
 
 먼저 도서관 회원을 위한 새로운 그룹을 생성합니다.
 
-1.	새 그룹을 생성하려면 그룹 옆 <b>Add</b> 버튼을 클릭하십시오. 그룹의 <b>Name</b> "Library Members"을 입력하십시오. ![](Pics/admin_authentication_add_group.png)
+1.	새 그룹을 생성하려면 그룹 옆 <b>Add</b> 버튼을 클릭하십시오. 그룹의 <b>Name</b>에 "Library Members"을 입력하십시오. ![](Pics/admin_authentication_add_group.png)
 2.	그룹에 대한 권한이 필요하지 않으므로 <b>SAVE</b>를 누르십시오 (그룹 목록으로 이동할 것입니다).
 
 이제 사용자를 생성합니다.
 
-1.	관리 사이트의 홈 페이지로 돌아갑니다.
-2.	<i>Users</i> 옆에 있는 <b>Add</b> 버튼을 클릭하여 <i>Add user</i> 대화 상자를 엽니다. ![](Pics/admin_authentication_add_user_prt1.png)
-3.	테스트 사용자를 위한 적절한 Username과 Password/Password confirmation을 입력하십시오.
-4.	<b>SAVE</b>를 눌러 사용자를 만듭니다.
+-	관리 사이트의 홈 페이지로 돌아갑니다.
+-	<i>Users</i> 옆에 있는 <b>Add</b> 버튼을 클릭하여 <i>Add user</i> 대화 상자를 엽니다. ![](Pics/admin_authentication_add_user_prt1.png)
+-	테스트 사용자를 위한 적절한 Username과 Password/Password confirmation을 입력하십시오.
+-	<b>SAVE</b>를 눌러 사용자를 만듭니다.
 
-관리 사이트는 새로운 사용자를 생성하고 즉시 <b>username</b> 변경 및 사용자 모델의 선택적 필드에 대한 정보를 추가할 수 있는 <i>Change user</i> 화면으로 이동합니다. 이름, 성, 전자 메일 주소 및 사용자의 상태와 권한(<b>Active</b> 플래그만 설정할 수 있음) 필드 등이 있습니다. 아래에서 사용자의 그룹과 권한을 지정하고 사용자와 관련된 중요한 날짜(예: 가입 날짜와 마지막 로그인 날짜)를 볼 수 있습니다. ![](Pics/admin_authentication_add_user_prt2.png) 5. <i>Groups</i> 섹션의 <i>Available groups</i> 목록에서 <b>Library Member</b> 그룹을 선택한 다음 상자 사이의 <b>오른쪽 화살표</b>를 눌러 <i>Chosen groups</i> 상자로 이동하십시오. ![](ㅖㅑㅊㄴ/admin_authentication_user_add_group.png) 6. 여기서 다른 작업을 수행할 필요가 없으므로 <b>SAVE</b>를 다시 선택하여 사용자 목록으로 이동하십시오.
+관리 사이트는 새로운 사용자를 생성하고 즉시 <b>username</b> 변경 및 사용자 모델의 선택적 필드에 대한 정보를 추가할 수 있는 <i>Change user</i> 화면으로 이동합니다. 이름, 성, 전자 메일 주소 및 사용자의 상태와 권한(<b>Active</b> 플래그만 설정할 수 있음) 필드 등이 있습니다. 아래에서 사용자의 그룹과 권한을 지정하고 사용자와 관련된 중요한 날짜(예: 가입 날짜와 마지막 로그인 날짜)를 볼 수 있습니다. ![](Pics/admin_authentication_add_user_prt2.png)
 
-이제 테스트를 위해 사용할 수있는 "도서관 일반 회원" 계정을 만들었습니다. (일단 로그인할 수 있도록 페이지를 구현한 경우).
+-	<i>Groups</i> 섹션의 <i>Available groups</i> 목록에서 <b>Library Members</b> 그룹을 선택한 다음 상자 사이의 <b>오른쪽 화살표</b>를 눌러 <i>Chosen groups</i> 상자로 이동하십시오. ![](Pics/admin_authentication_user_add_group.png)
+-	여기서 다른 작업을 수행할 필요가 없으므로 <b>SAVE</b>를 다시 선택하여 사용자 목록으로 이동하십시오.
+
+이제 (일단 로그인할 수 있도록 페이지를 구현한 경우) 테스트를 위해 사용할 수있는 "도서관 일반 회원" 계정을 만들었습니다.
 
 > <b>Note</b>: 라이브러리 다른 사용자를 만들어야합니다. 또한 사서를 위한 그룹을 만들고 그 그룹에 사용자를 추가하십시오.
 
@@ -102,7 +105,7 @@ Django는 로그인, 로그 아웃 및 패스워드 관리 "out of the box" 를 
 
 > <b>Note</b>: 이 코드를 꼭 사용할 필요는 없지만 일을 훨씬 쉽게 할 수 있으므로 필요할 것입니다. 사용자 모델을 변경하는 경우 거의 확실하게 양식 처리 코드를 변경해야 하지만 그래도 여전히 스톡 뷰 기능을 사용할 수 있습니다.
 >
-> <b>Note</b>: 이 경우 카탈로그 응용 프로그램에 URL 및 템플리트를 비롯한 인증 페이지를 합리적으로 저장할 수 있습니다. 그러나 여러 개의 응용 프로그램을 사용하는 경우 이 공유 로그인 동작을 분리하여 전체 사이트에서 사용할 수 있도록 하는 것이 좋을 것입니다.
+> <b>Note</b>: 이 경우 카탈로그 어플리케이션에 URL과 템플리트를 비롯한 인증 페이지를 합리적으로 저장할 수 있습니다. 그러나 여러 개의 어플리케이션을 사용하는 경우 이 공유 로그인 동작을 분리하여 전체 사이트에서 사용할 수 있도록 하는 것이 좋을 것입니다.
 
 #### Project URLs
 
@@ -141,7 +144,7 @@ Exception Value:    registration/login.html
 
 #### 템플리트 폴더
 
-방금 추가한 URL(과 내재된 views)를 템플리트 검색 경로의 디렉토리 /<b>registration</b>/의 관련 템플리트에서 찾을 수 있습니다.
+방금 추가한 URL(과 내재된 views)을 템플리트 검색 경로의 디렉토리 /<b>registration</b>/의 관련 템플리트에서 찾을 수 있습니다.
 
 이 사이트에서는 HTML 페이지를 <b>templates</b>/<b>registration</b>/ 디렉토리에 저장합니다. 이 디렉토리는 프로젝트 루트 디렉토리 (즉, <b>catalog</b>와 <b>locallibrary</b> 폴더가 저장된 디렉토리)에 있어야 합니다. 지금이 폴더를 만드십시오.
 
@@ -168,7 +171,7 @@ TEMPLATES = [
 
 #### Login 템플리트
 
-> <b>Important</b>: 이 단계에서 제공하는 인증 템플리트는 Django 데모 로그인 템플리트의 매우 기본적으로 조금 수정된 버전입니다. 프로젝트만의 용도로 템플리트를 정의해야 할 수도 있습니다.
+> <b>Important</b>: 이 단원에서 제공하는 인증 템플리트는 Django 데모 로그인 템플리트의 매우 기본적인 버전을 조금 수정한 것입니다. 프로젝트 맞춤형으로 템플리트를 정의할 수도 있습니다.
 
 <b>/locallibrary/templates/registration/</b>에 <b>login.html</b>이라는 HTML 파일을 다음 내용으로 생성하십시오.
 
@@ -215,13 +218,13 @@ TEMPLATES = [
 {% endblock %}
 ```
 
-이 템플리트는 이전 템플리트들과 유사합니다. 기본 템플리트를 확장하여 콘텐츠 블록에 덮어 씁니다. 나머지 코드는 상당히 표준 형식의 처리 코드입니다. 이 코드에 대하여 후에 튜토리얼에서 설명할 것입니다. 지금 알아야 할 것은 사용자 이름과 암호를 입력할 수있는 양식을 출력하고 유효하지 않은 값을 입력하면 페이지를 새로 고칠 때 정확한 값을 입력하라는 메시지를 보내는 것입니다.
+이 템플리트는 이전 템플리트들과 유사합니다. 기본 템플리트를 확장하여 콘텐츠 블록에 덮어 씁니다. 나머지 코드는 상당히 표준 형식의 처리 코드입니다. 이 코드에 대하여 이후 튜토리얼에서 설명할 것입니다. 지금 알아야 할 것은 사용자 이름과 암호를 입력할 수있는 양식을 출력하고 유효하지 않은 값을 입력하면 페이지를 새로 고칠 때 정확한 값을 입력하라는 메시지를 보내는 것입니다.
 
 템플리트를 저장하고 로그인 페이지 (http://127.0.0.1:8000/accounts/login/)로 다시 이동하면 아래와 같이 보여줍니다.
 
 ![](Pics/library_login.png)
 
-로그인을 성공하면 다른 페이지로 리디렉션됩니다 (기본적으로 http://127.0.0.1:8000/accounts/profile/). 여기서 문제는 기본적으로 장고는 로그인 후에 프로필 페이지로 이동하게 굿어되어 있습니다. 이 페이지를 아직 정의하지 않았으므로 또 다른 오류가 발생합니다.
+로그인을 성공하면 다른 페이지로 리디렉션됩니다 (기본적으로 http://127.0.0.1:8000/accounts/profile/). 여기서 문제는 기본적으로 장고는 로그인 후에 프로필 페이지로 이동하게 되어 있습니다. 이 페이지를 아직 정의하지 않았으므로 또 다른 오류가 발생합니다.
 
 프로젝트 설정(<b>/locallibrary/locallibrary/settings.py</b>)을 열고 아래 텍스트를 추가하십시오. 이제부터 로그인하면 기본적으로 사이트 홈페이지로 리디렉션됩니다.
 
@@ -276,7 +279,7 @@ LOGIN_REDIRECT_URL = '/'
 
 ##### Password 재설정 완료
 
-아래 양식은 사용자의 이메일 주소를 수집한 다음 표시됩니다. <b>/locallibrary/templates/registration/password_reset_done.html</b>을 만들고 아래 내용을 채움니다.
+사용자의 이메일 주소를 수집한 다음 아래 양식을 디스플레이합니다. <b>/locallibrary/templates/registration/password_reset_done.html</b>을 만들고 아래 내용을 채움니다.
 
 ```html
 {% extends "base_generic.html" %}
@@ -393,7 +396,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 <code>url</code> 템플리트 태그와 해당 URL 설정 이름을 사용하여 로그인 및 로그아웃 링크 URL을 작성합니다. 또한 URL의 끝에 <code>?next = {{request.path}}</code>를 어떻게 추가했는지 주목하십시오. 링크된 URL의 끝에 <i>현재</i> 페이지의 주소(URL)를 포함하는 URL 매개 변수를 추가하는 것입니다. 사용자가 성공적으로 로그인/아웃한 다음, 뷰는 이 "<code>next</code>" 값을 사용하여 사용자가 처음으로 로그인/아웃 링크를 클릭한 페이지로 리디렉션 합니다.
 
-> <b>Note</b> : 그것을 시도하십시오. 홈 페이지에서 사이드 바에서 Login/Logout을 클릭하면 작업이 완료된 다음 같은 페이지로 와서 종료합니다.
+> <b>Note</b> : 이를 시도하십시오. 홈 페이지에서 사이드 바에서 Login/Logout을 클릭하면 작업이 완료된 다음 같은 페이지로 와서 종료합니다.
 
 ---
 
@@ -401,7 +404,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 이제는 특정 사용자로 페이지를 제한하는 방법을 알았으므로 현재 사용자가 대여한 책의 view를 만들어 보겠습니다.
 
-안타깝게도 사용자가 도서를 빌릴 수있는 방법이 없습니다. 도서 목록을 생성하기 전에 먼저 <code>BookInstance</code> 모델을 확장하여 대여 개념을 지원하고 Django Admin 응용 프로그램을 사용하여 책을 테스트 사용자에게 대여합니다.
+안타깝게도 사용자가 도서를 빌릴 수있는 방법이 없습니다. 도서 목록을 생성하기 전에 먼저 <code>BookInstance</code> 모델을 확장하여 대여 개념을 지원하고 Django Admin 어플리케이션을 사용하여 책을 테스트 사용자에게 대여합니다.
 
 #### 모델
 
@@ -531,7 +534,7 @@ urlpatterns += [
 
 이 템플리트는 <code>Book</code>와 <code>Author</code> 객체에 대해 이전에 작성한 템플리트와 매우 유사합니다. 여기서 모델에서 추가한 메소드(<code>bookinst.is_overdue</code>)를 검사하여 연체된 항목의 색상을 변경하는 것이 유일하게 "새로운" 것입니다.
 
-개발 서버가 실행 중일 때 브라우저에서 http://127.0.0.1:8000/catalog/mybooks/ 에 로그인한 사용자의 목록을 볼 수 있습니다. 로그인하고 로그아웃한 상태에서 이 작업을 시도하면 로그인 페이지로 리디렉션되어야 합니다.
+개발 서버가 실행 중일 때 http://127.0.0.1:8000/catalog/mybooks/ 에서 로그인한 사용자의 목록을 볼 수 있습니다. 로그아웃한 상태에서 이 작업을 시도하면 로그인 페이지로 리디렉션되어야 합니다.
 
 #### 사이드바에 목록 추가
 
@@ -540,7 +543,7 @@ urlpatterns += [
 기본 템플리트(<b>/locallibrary/catalog/templates/base_generic.html</b>)를 열고 아래 그림과 같이 사이드바에
 
 ```html
-<li><a href="{% url 'my-borrowed' %}">My Borrowed</a></li></code>
+<li><a href="{% url 'my-borrowed' %}">My Borrowed</a></li>
 ```
 
 을 추가하십시오.
@@ -569,11 +572,11 @@ urlpatterns += [
 
 권한은 모델과 관련되며 권한이 있는 사용자가 모델 인스턴스에서 수행할 수 있는 작업을 정의합니다. 기본적으로 Django는 모든 모델에 자동으로 추가, 변경 및 삭제 권한을 부여합니다. 이 권한을 가진 사용자는 관리 사이트를 통해 연관된 작업을 수행할 수 있습니다. 모델에 대한 고유 권한을 정의하고 특정 사용자에게 권한을 부여할 수 있습니다. 동일한 모델의 다른 인스턴스와 관련된 권한을 변경할 수도 있습니다.
 
-뷰와 템플릿의 사용 권한을 테스트하는 것은 인증 상태를 테스트하는 것과 매우 유사합니다 (실제로 권한을 위한 테스트도 인증을 테스트합니다).
+뷰와 템플리트의 사용 권한을 테스트하는 것은 인증 상태를 테스트하는 것과 매우 유사합니다 (실제로 권한 테스트도 인증 테스트입니다).
 
 #### 모델
 
-모델 "<code>class Meta</code>" 섹션에서 <code>permissions</code> 필드를 사용하여 사용 권한을 정의합니다. 튜플에 필요한 만큼 권한을 지정할 수 있습니다. 각 권한은 권한 이름과 권한 표시 값을 포함하는 중첩된 튜플에 정의됩니다. 예를 들어 아래와 같이 책이 반환되었음을 사용자가 표시하도록 허용할 수있는 권한을 정의할 수 있습니다.
+모델 "<code>class Meta</code>" 섹션에서 <code>permissions</code> 필드를 사용하여 사용 권한을 정의합니다. 튜플에 필요한 만큼 권한을 지정할 수 있습니다. 각 권한은 권한 이름과 권한 표시 값을 포함하는 중첩된 튜플로 정의됩니다. 예를 들어 아래와 같이 책이 반환되었음을 사용자가 표시하도록 허용할 수있는 권한을 정의할 수 있습니다.
 
 ```python
 class BookInstance(models.Model):
@@ -589,7 +592,7 @@ class BookInstance(models.Model):
 
 #### 템플리트
 
-현재 사용자의 권한은 <code>{{ perms }}</code>라는 템플리트 변수에 저장됩니다. 연결된 Django '앱'내 특정 변수 이름을 사용하여 현재 사용자가 특정 권한을 갖고 있는 지를 확인할 수 있습니다 (예: <code>{{ perms.catalog.can_mark_returned }}</code>는 사용자가 이 권한을 갖고 있으면 True이고, 그렇지 않으면 False입니다. 아래와 같이 템플릿 <code>{% if %}</code> 태그를 사용하여 권한을 테스트합니다.
+현재 사용자의 권한은 <code>{{ perms }}</code>라는 템플리트 변수에 저장됩니다. 연결된 Django '앱'내 특정 변수 이름을 사용하여 현재 사용자가 특정 권한을 갖고 있는 지를 확인할 수 있습니다 (예: <code>{{ perms.catalog.can_mark_returned }}</code>는 사용자가 이 권한을 갖고 있으면 `True`이고, 그렇지 않으면 `False`입니다. 아래와 같이 템플릿 <code>{% if %}</code> 태그를 사용하여 권한을 테스트합니다.
 
 ```html
 {% if perms.catalog.can_mark_returned %}
@@ -628,7 +631,7 @@ class MyView(PermissionRequiredMixin, View):
 
 #### 예
 
-다음 튜토리얼에서는 LocalLibrary를 아마도 업데이트할 수 있을 것입니다.
+여기에서 LocalLibrary를 업데이트하지 않고 아마도 다음 튜토리얼에서는 할 것입니다.
 
 ---
 
@@ -636,7 +639,7 @@ class MyView(PermissionRequiredMixin, View):
 
 이 단계 앞부분에서 현재 사용자 페이지에서 대여한 책을 나열하는 방법을 설명했습니다. 이제는 도서관 사서만 볼 수 있는 유사한 페이지를 만들고 대출된 <i>모든</i> 책과 그 대출자 이름을 포함하도록 만드는 것입니다.
 
-다른 뷰와 동일한 패턴을 따라야합니다. 가장 큰 차이점은 뷰를 사서만으로 제한해야 한다는 것입니다. 사용자가 스태프 멤버인지 여부에 따라 이 작업을 수행 할 수 있지만 (함수 장식자: <code>staff_member_required</code>, 템플리트 변수: <code>user.is_staff</code>), 앞에서 설명한 것처럼 <code>can_mark_returned</code> 권한과 <code>PermissionRequiredMixin</code>을 대신 사용하는 것이 좋습니다.
+다른 뷰와 동일한 패턴을 따라야 합니다. 가장 큰 차이점은 뷰를 사서만으로 제한해야 한다는 것입니다. 사용자가 스태프 멤버인지 여부에 따라 이 작업을 수행 할 수 있지만 (함수 장식자: <code>staff_member_required</code>, 템플리트 변수: <code>user.is_staff</code>), 앞에서 설명한 것처럼 <code>can_mark_returned</code> 권한과 <code>PermissionRequiredMixin</code>을 대신 사용하는 것이 좋습니다.
 
 > <b>Important</b>: 권한 기반 테스트를 위해 수퍼 유저를 사용하지 마십시오 (사용 권한이 아직 정의되지 않은 경우에도 권한 검사는 항상 수퍼 유저에게 true를 반환합니다). 대신 사서 사용자를 만들고 필요한 기능을 추가하십시오.
 
@@ -662,19 +665,19 @@ class MyView(PermissionRequiredMixin, View):
 
 ---
 
-### 이 단원에서 아래 단계를 다룹니다.
+### 이 튜토리얼은 다음과 같이 구성되어 있습니다.
 
 -	[Django 소개](introduction.md)
 -	[Django 개발 환경 설정](developmentEnvironment.md)
 -	[Django 튜토리얼: The Local Library website](tutorialLocalLibraryWebsite.md)
 -	[Django 튜토리얼 2부: 웹사이트 골조 만들기](skeletonWebsite.md)
 -	[Django 튜토리얼 3부: 모델](models.md)
--	[Django 튜토리얼 4부: Django 관리 사이트](adminSite.md)
+-	[Django 튜토리얼 4부: Django admin 사이트](adminSite.md)
 -	[Django 튜토리얼 5부: 홈 페이지 만들기](homePage.md)
 -	[Django 튜토리얼 6부: 일반 목록과 상세 보기](genericViews.md)
 -	[Django 튜토리얼 7부: 세션 프레임워크](sessions.md)
--	[Django 튜토리얼 8부: 사용자 인증 및 사용 권한](authentication.md)
--	[Django 튜토리얼 9부: 양식 작업](forms.md)
--	[Django 튜토리얼 10부: Django 웹 응용프로그램 테스팅](testing.md)
--	[Django 튜토리얼 11부: 운영으로 Django 전개](deployment.md)
--	[Django 웹 응용프로그램 보안](webApplicationSecurity.md)
+-	[Django 튜토리얼 8부: 사용자 인증과 권한관리](authentication.md)
+-	[Django 튜토리얼 9부: 양식](forms.md)
+-	[Django 튜토리얼 10부: Django 웹 어플리케이션 테스팅](testing.md)
+-	[Django 튜토리얼 11부: 프로덕션으로 Django 전개](deployment.md)
+-	[Django 웹 어플리케이션 보안](webApplicationSecurity.md)
