@@ -1,21 +1,21 @@
 Django 튜토리얼 10부: Django 웹 응용프로그램 테스팅
 ---------------------------------------------------
 
-이 문서는 저작자 동의없이 KAIST 대학정보화사업팀을 위하여 [Django Tutorial Part 10: Testing a Django web application](https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django/Testing)를 번역 편집하여 작성한 것입니다.
+---
 
 웹사이트가 성장함에 따라 테스트를 수동으로 하는 것이 어려워집니다. 테스트할 부분이 많을뿐만 아니라 구성 요소간의 상호 작용이 더욱 복잡해지면서 한 영역의 작은 변경이 다른 영역에 영향을 미칠 수 있으므로 변경 사항이 추가될 때마다 모든 것이 계속 작동하고 오류가 발생하지 않도록 변경해야 합니다 . 이러한 문제를 완화하는 한 방법은 자동화된 테스트를 작성하는 것입니다. 자동화된 테스트는 변경 작업을 수행할 때마다 쉽고 믿을 수 있게 실행할 수 있습니다. 이 장에서는 Django의 테스트 프레임워크를 사용하여 웹사이트의 단위 테스트를 자동화하는 방법을 설명합니다.
 
-> 선수지식: [Django 튜토리얼 9부: 양식 작업](forms.md)까지 모든 주제를 숙지하여야 합니다.
+> 선수지식: [Django 튜토리얼 9부: 양식](forms.md)까지 모든 주제를 숙지하여야 합니다.
 >
-> 목표: 사용자로부터 정보를 얻고 데이터베이스를 업데이트할 수 있도록 양식을 작성하는 방법을 이해합니다. 제네릭 클래스 기반 양식 편집 뷰를 사용하여 단일 모델에 대한 작업 양식 작성을 크게 단순화시키는 방법을 이해합니다.
+> 목표: Django 기반 웹사이트릐 단위 테스트 작성 방법을 이해합니다.
 
 ---
 
 ### 개요
 
-[Local Library](tutorialLocalLibraryWebsite.md)은 현재 모든 도서와 저자의 목록을 표시하는 페이지, `Book`과 `Author` 항목의 상세 보기, `BookInstances`를 갱신하는 페이지, `Author` 항목(그리고 [앞 장](forms.md)의 도전과제를 수행하였다면 `Books` 레코드)을 작성, 변경과 삭제하는 페이지로 이루어져 있습니다. 이 사이트가 비교적 작지만 각 페이지로 이동하며 모든 것이 예상대로 작동하는 지를 피상적으로라도 수동으로 확인하는 데 몇 분이 걸릴 수 있습니다. 사이트가 성장함에 따라 사이트를 변경하고 모든 것이 "적절하게" 작동하는 지를 수동으로 확인하는 데 필요한 시간은 점점 길어집니다. 현재 상태를 유지하려고 해도 개발자는 대부분의 시간을 테스트에 보내고 코드 개선에 보낼 시간은 거의 없을 것입니다.
+[Local Library](tutorialLocalLibraryWebsite.md)는 현재 모든 도서와 저자의 목록을 표시하는 페이지, `Book`과 `Author` 항목의 상세 보기, `BookInstances`를 갱신하는 페이지, `Author` 항목(그리고 [앞 장](forms.md)의 도전과제를 수행하였다면 `Books` 레코드)을 작성, 변경과 삭제하는 페이지로 이루어져 있습니다. 이 사이트가 비교적 작지만 각 페이지로 이동하며 모든 것이 예상대로 작동하는 지를 피상적으로라도 수동으로 확인하는 데 몇 분이 걸릴 수 있습니다. 사이트가 성장함에 따라 사이트를 변경하고 모든 것이 "적절하게" 작동하는 지를 수동으로 확인하는 데 필요한 시간은 점점 길어집니다. 현재 상태를 유지하려고 해도 개발자는 대부분의 시간을 테스트에 보내고 코드 개선에 보낼 시간은 거의 없을 것입니다.
 
-자동화된 테스트는 이 문제를 도와줄 수 있습니다. 명백한 장점은 수작업 테스트보다 훨씬 빠르게 실행할 수 있으며 훨씬 더 세부적인 수준으로 테스트할 수 있으며 매번 똑같은 기능을 정확하게 테스트할 수 있다는 것입니다 (테스트 인력은 신뢰할 만하지 않습니다). 신속하기 때문에 자동화된 테스트를 보다 규칙적으로 실행할 수 있으며, 테스트가 실패하면 코드가 예상대로 수행하지 않는 부분을 가리킵니다.
+자동화된 테스트는 이 문제를 도와줄 수 있습니다. 명백한 장점은 수작업 테스트보다 훨씬 빠르게 실행할 수 있고, 훨씬 더 세부적인 수준으로 테스트할 수 있으며 매번 똑같은 기능을 정확하게 테스트할 수 있다는 것입니다 (테스트 인력은 신뢰할 만하지 않습니다). 신속하기 때문에 자동화된 테스트를 보다 규칙적으로 실행할 수 있으며, 테스트가 실패하면 코드가 예상대로 수행하지 않는 부분을 가리킵니다.
 
 또한 자동회된 테스트는 코드의 실제 "사용자"로서의 역할을 할 수 있으므로 웹사이트의 작동 방식을 정의하고 문서화하는 작업을 엄격하게 수행해야 합니다. 이들은 종종 코드 예제와 기초 문서가 될 수 있습니다. 그리하여 일부 소프트웨어 개발 프로세스는 테스트 정의와 구현으로 시작하고 다음 필요한 작동(예: [테스트 기반](https://en.wikipedia.org/wiki/Test-driven_development)과 [동작 기반](https://en.wikipedia.org/wiki/Behavior-driven_development) 개발)에 맞추어 코드를 작성합니다.
 
@@ -41,11 +41,11 @@ Django 튜토리얼 10부: Django 웹 응용프로그램 테스팅
 
 #### 테스트를 위한 Django 기능
 
-웹사이트의 테스트는 복잡한 작업입니다. HTTP 수준의 요청 처리에서 부터, 모델에 대한 쿼리, 양식에 대한 유효성 검사 및 처리와 템플릿 렌더링까지 여러 논리 계층으로 이루어지기 때문입니다.
+웹사이트의 테스트는 복잡한 작업입니다. HTTP 수준의 요청 처리에서 부터, 모델에 대한 쿼리, 양식에 대한 유효성 검사와 처리 및 템플릿 렌더링까지 여러 논리 계층으로 이루어지기 때문입니다.
 
-Django는 Python 표준 [unittest](https://docs.python.org/3/library/unittest.html#module-unittest) 라이브러리를 기반으로 작은 클래스 계층 구조로 테스트 프레임 워크를 제공합니다. 이름에도 불구하고 테스트 프레임워크는 단위 테스트와 통합 테스트에 모두 적합합니다. Django 프레임워크에 테스트 웹과 Django 특정 동작을 테스트하는 데 도움을 주는 API 메소드와 도구를 추가합니다. 이를 통해 요청을 시뮬레이션하고 테스트 데이터를 삽입하며 응용 프로그램의 출력을 검사할 수 있습니다. 또한 Django는 [다른 테스트 프레임워크를 사용하기](https://docs.djangoproject.com/en/2.1/topics/testing/advanced/#other-testing-frameworks) 위한 API([LiveServerTestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#liveservertestcase))와 도구를 제공합니다. 예를 들어 잘 알려진 [Selenium](https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Your_own_automation_environment) 프레임워크와 통합하여 라이브 브라우저와 상호 작용하는 사용자를 시뮬레이트할 수 있습니다.
+Django는 Python 표준 [unittest](https://docs.python.org/3/library/unittest.html#module-unittest) 라이브러리를 기반으로 작은 클래스 계층 구조인 테스트 프레임워크를 제공합니다. 이름에도 불구하고 테스트 프레임워크는 단위 테스트와 통합 테스트에 모두 적합합니다. Django 프레임워크에 테스트 웹과 Django 특정 동작을 테스트하는 데 도움을 주는 API 메소드와 도구를 추가합니다. 이를 통해 요청을 시뮬레이션하고 테스트 데이터를 삽입하며 어플리케이션의 출력을 검사할 수 있습니다. 또한 Django는 [다른 테스트 프레임워크를 사용하기](https://docs.djangoproject.com/en/2.1/topics/testing/advanced/#other-testing-frameworks) 위한 API([LiveServerTestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#liveservertestcase))와 도구를 제공합니다. 예를 들어 잘 알려진 [Selenium](https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Your_own_automation_environment) 프레임워크와 통합하여 라이브 브라우저와 상호 작용하는 사용자를 시뮬레이트할 수 있습니다.
 
-테스트를 작성하려면 Django (또는 *unittest*) 테스트 기본 클래스 ([SimpleTestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#simpletestcase), [TransactionTestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#transactiontestcase), [TestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#testcase), [LiveServerTestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#liveservertestcase))로 부터 파생시켜 클래스를 생성하고, 특정 기능이 예상대로 작동하는지 확인하는 별도의 메소드를 작성하십시오 (테스트에서는 표현식(exrpession)의 결과가 `True` 또는 `False` 값을 갖거나 두 값이 같은 경우 등을 테스트하기 위하여 "assert" 메소드를 사용합니다). 테스트 수행을 시작할 때 프레임워크는 파생 클래스에서 선택한 테스트 메소드를 실행합니다. 테스트 메소드는 아래 그림과 같이 클래스에서 정의된 일반적인 설정과 사후 동작을 함께 또는 개별적으로 각각 독립적인 환경에서 실행합니다.
+테스트를 작성하려면 Django (또는 *unittest*) 테스트 기본 클래스 ([SimpleTestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#simpletestcase), [TransactionTestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#transactiontestcase), [TestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#testcase), [LiveServerTestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#liveservertestcase))로부터 상속받아 클래스를 생성하고, 특정 기능이 예상대로 작동하는지 확인하는 별도의 메소드를 작성하십시오 (테스트에서는 표현식(exrpession)의 결과가 `True` 또는 `False` 값을 갖거나 두 값이 같은 경우 등을 테스트하기 위하여 "assert" 메소드를 사용합니다). 테스트 수행을 시작할 때 프레임워크는 서브클래스에서 선택한 테스트 메소드를 실행합니다. 테스트 메소드는 아래 그림과 같이 클래스에서 정의된 일반적인 설정과 사후 동작을 함께 또는 개별적으로 각각 독립적인 환경에서 실행합니다.
 
 ```python
 class YourTestClass(TestCase):
@@ -64,13 +64,13 @@ class YourTestClass(TestCase):
         self.assertTrue(False)
 ```
 
-대부분의 테스트에 가장 적합한 기본 클래스는 [django.test.TestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#testcase)입니다. 이 테스트 클래스는 테스트가 실행되기 전 깨끗한 데이터베이스를 만들고 자체 트랜잭션에서 모든 테스트 함수를 실행합니다. 또한 클래스는 뷰 수준에서 코드와 상호 작용하는 사용자를 시뮬레이트할 수 있는 테스트 [Client](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#django.test.Client)를 갖고 있습니다. 다음 절에서는 이 [TestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#testcase) 기본 클래스를 사용하여 생성된 단위 테스트에 대해 집중적으로 다룰 것입니다.
+대부분의 테스트에 가장 적합한 기본 클래스는 [django.test.TestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#testcase)입니다. 이 테스트 클래스는 테스트가 실행되기 전 깨끗한 데이터베이스를 만들고 자체 트랜잭션에서 모든 테스트 함수를 실행합니다. 또한 클래스는 뷰 수준에서 코드와 상호 작용하는 사용자를 시뮬레이트할 수 있는 테스트 [Client](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#django.test.Client)를 갖고 있습니다. 다음 섹션에서는 이 [TestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#testcase) 기본 클래스를 사용하여 생성된 단위 테스트에 대해 집중적으로 다룰 것입니다.
 
 > **Note**: [django.test.TestCase](https://docs.djangoproject.com/en/2.1/topics/testing/tools/#testcase) 클래스는 매우 편리하지만 일부 테스트가 필요할 때보다 느려질 수 있습니다 (모든 테스트가 자체 데이터베이스를 설정하거나 뷰 상호 작용을 시뮬레이션해야 하는 것은 아닙니다). 이 클래스로 할 수 있는 것에 익숙해지면 일부 시험을 보다 간단한 테스트 클래스로 대체할 수 있습니다.
 
 #### 무엇을 테스트?
 
-Python이나 Django의 일부로 제공되는 라이브러리나 기능이 아닌 개발한 코드 자체 모든 양상을 테스트해야 합니다.
+Python이나 Django의 일부로 제공되는 라이브러리나 기능이 아닌 개발한 코드 자체의 모든 양상을 테스트해야 합니다.
 
 예를 들어 아래 정의된 `Author` 모델을 고려한다면 Django가 정의한 것이므로 `first_name`과 `last_name`은 `CharField`로 데이터베이스에 적절히 저장되었음(실제로 개발 중에는 필연적으로 이 기능을 테스트할 지라도)을 명시적으로 테스트할 필요는 없습니다. 또한 `date_of_birth`는 Django에서 구현한 것이기 때문에 date 필드의 검증을 테스트할 필요가 없습니다.
 
@@ -87,7 +87,7 @@ class Author(models.Model):
         return reverse('author-detail', args=[str(self.id)])
 
     def __str__(self):
-        return '%s, %s' % (self.last_name, self.first_name)
+        return '%s, %s' %(self.last_name, self.first_name)
 ```
 
 마찬가지로 사용자 정의 메소드 <code>get\_absolute_url()</code>과 `__str__()`</code>은 코드 또는 비즈니스 로직이므로 요구 사항에 따라 작동하는 지 확인해야 합니다. <code>get\_absolute_url()</code>의 경우 Django `reverse()` 메서드가 적절히 구현되었다는 것을 믿을 수 있습니다. 따라서 테스트할 대상은 연결된 뷰를 실제로 정의한 것입니다.
@@ -102,7 +102,7 @@ class Author(models.Model):
 
 "무엇을 테스트할 것인가"의 세부 사항에 들어가기 전에 먼저 테스트를 정의하는 위치와 방법을 간단히 살펴 보겠습니다.
 
-Django는 unittest 모듈의 [built-in test discovery](https://docs.python.org/3/library/unittest.html#unittest-test-discovery)을 사용하여 <b>test*.py</b> 패턴으로 명명 된 파일을 현재 작업 디렉토리 내에서 테스트를 검색합니다. 파일의 이름을 적당히 지정하려면 개발자가 원하는 구조를 사용할 수 있습니다. 테스트 코드에 대한 모듈을 만들고 모델, 뷰, 양식과 테스트해야 하는 다른 유형의 코드에 대해 별도의 파일을 만드는 것이 좋습니다.
+Django는 unittest 모듈의 [built-in test discovery](https://docs.python.org/3/library/unittest.html#unittest-test-discovery)을 사용하여 <b>test*.py</b> 패턴으로 명명된 파일을 현재 작업 디렉토리 내에서 테스트를 검색합니다. 파일의 이름을 적당히 지정하려면 개발자가 원하는 구조를 사용할 수 있습니다. 테스트 코드에 대한 모듈을 만들고 모델, 뷰, 양식과 테스트해야 하는 다른 유형의 코드에 대해 별도의 파일을 만드는 것이 좋습니다.
 
 ```
 catalog/
@@ -127,7 +127,7 @@ from django.test import TestCase
 # Create your tests here.
 ```
 
-종종 특정 기능을 테스트하기 위한 개별 메소드와 함께 테스트할 각 모델/뷰/ 양식에 대한 테스트 클래스를 추가합니다. 다른 경우에는 특정 유스 케이스를 테스트하기 위한 별도의 클래스를 사용하고 그 유스 케이스의 양상을 테스트하는 개별 테스트 함수를 사용할 수도 있습니다 (예: 각각의 가능한 실패 사례를 테스트할 함수와 모델 필드가 적절히 유효한지 테스트하는 클래스). 다시 말하지만 구조는 개발자에게 달려 있습니다. 그러나 일관성이 있다면 가장 좋습니다.
+종종 특정 기능을 테스트하기 위한 개별 메소드와 함께 테스트할 각 모델/뷰/양식에 대한 테스트 클래스를 추가합니다. 다른 경우에는 특정 유스 케이스를 테스트하기 위한 별도의 클래스를 사용하고 그 유스 케이스의 양상을 테스트하는 개별 테스트 함수를 사용할 수도 있습니다 (예: 각각의 가능한 실패 사례를 테스트할 함수와 모델 필드가 적절히 유효한지 테스트하는 클래스). 다시 말하지만 구조는 개발자에게 달려 있습니다. 그러나 일관성이 있다면 가장 좋습니다.
 
 아래 테스트 클래스를 파일의 끝에 추가하십시오. 이 클래스은 TestCase에서 파생하여 테스트 케이스 클래스를 구성하는 방법을 보입니다.
 
@@ -155,7 +155,7 @@ class YourTestClass(TestCase):
         self.assertEqual(1 + 1, 2)
 ```
 
-새 클래스는 사전 테스트 구성(예 : 테스트에 필요한 모델이나 다른 객체를 만드는 경우)에 사용할 수 있는 두 메서드를 정의합니다.
+새 클래스는 사전 테스트 구성(예: 테스트에 필요한 모델이나 다른 객체를 만드는 경우)에 사용할 수 있는 두 메서드를 정의합니다.
 
 -	`setUpTestData()`는 클래스 수준 설정을 위해 테스트를 시작할 때 한 번 호출됩니다. 이 방법을 사용하여 테스트 메소드에서 수정하거나 변경하지 않을 객체를 만들 수 있습니다.
 -	`setUp()`은 모든 테스트 함수 앞에 호출되어 테스트가 수정할 수 있는 객체를 설정합니다. 모든 테스트 함수는 이러한 객체의 "최신" 버전을 가져옵니다.
@@ -255,7 +255,7 @@ python3 manage.py test catalog.tests.test_models.YourTestClass.test_one_plus_one
 
 ### LocalLibrary 테스트
 
-이제 테스트를 수행하는 방법과 테스트해야 할 것이 무엇인지 알았습니다. 몇 가지 실용적인 예제를 살펴 보겠습니다.
+이제 테스트를 수행하는 방법과 테스트해야 할 것이 무엇인지 알았습니다. 몇 가지 실용적인 예제를 살펴 보도록 하겠습니다.
 
 > <b>Note</b>: 가능한 모든 테스트를 작성하지 않지만 테스트 작동 방법과 더 많은 작업 수행에 필요한 아이디어를 제공할 것입니다.
 
@@ -263,7 +263,7 @@ python3 manage.py test catalog.tests.test_models.YourTestClass.test_one_plus_one
 
 위에서 논의했듯이 설계 또는 작성한 코드로 정의된 것을 테스트해야 하지만 Django 또는 Python 개발팀에서 이미 테스트 한 라이브러리나 코드는 테스트하지 않습니다.
 
-예를 들어, 아래 `Author` 모델을 고려할 때 모든 필드의 레이블을 테스트해야 합니다. 대부분의 필드를 명시적으로 지정하지 않았지만 설계단계에서 값을 지정해야 하기 때문입니다. 값을 테스트하지 않는다면 필드 레이블이 원하는 값을 가지고 있는지 확인할 수 없습니다. 마찬가지로 Django가 지정된 길이의 필드를 만들 것이라고 믿지만, 계획대로 구현 되었는가 확인을 위해 길이에 대한 테스트를 지정하는 것이 좋습니다.
+예를 들어, 아래 `Author` 모델을 고려할 때 모든 필드의 레이블을 테스트해야 합니다. 대부분의 필드를 명시적으로 지정하지 않았지만 설계 단계에서 값을 지정해야 하기 때문입니다. 값을 테스트하지 않는다면 필드 레이블이 원하는 값을 가지고 있는지 확인할 수 없습니다. 마찬가지로 Django가 지정된 길이의 필드를 만들 것이라고 믿지만, 계획대로 구현 되었는가 확인을 위해 길이에 대한 테스트를 지정하는 것이 좋습니다.
 
 ```python
 class Author(models.Model):
@@ -336,7 +336,7 @@ self.assertEquals(field_label, 'first name')
 아래와 같은 흥미로운 점이 있습니다.
 
 -	<code>author.first_name.verbose_name</code>를 사용하여 <code>verbose_name</code>을 직접 가져올 수 없습니다. <code>author.first_name</code>은 문자열이지만 <code>author.first_name</code>의 속성을 접근하는 데 사용할 수있는 <code>first_name</code> 객체의 핸들은 아닙니다. 대신 필드의 인스턴스를 가져와 저자의 <code>\_meta</code> 속성을 이용하고, 추가 정보를 위한 쿼리에 이용합니다.
--	<code>assertTrue (field_label == 'first name')</code>보다는 <code>assertEquals (field_label, 'first name')</code>를 사용하기로 했습니다. 그 이유는 테스트가 실패하면 후자의 출력은 실제로 발생한 레이블을 알려주므로 문제의 디버깅이 약간 쉬워집니다.
+-	<code>assertTrue (field_label == 'first name')</code>보다는 <code>assertEquals (field_label, 'first name')</code>를 사용하기로 했습니다. 그 이유는 테스트가 실패하면 후자의 출력은 실제로 발생한 레이블을 알려주므로 문제 디버깅이 약간 쉬워집니다.
 
 > **Note**: <code>last_name</code>와 <code>date_of_birth</code> 레이블에 대한 테스트와 <code>last_name</code> 필드의 길이에 대한 테스트는 생략합니다. 위에서 제시된 명명 규칙과 접근법에 따라 이제 자신의 버전을 추가하십시오.
 
@@ -380,7 +380,7 @@ AssertionError: 'Died' != 'died'
 
 양식을 테스트하는 철학은 모델을 테스트하는 철학과 동일합니다. 코딩한 내용이나 디자인에서 지정한 내용은 테스트해야 하지만 기본 프레임 워크 및 서드 파티 라이브러리의 동작은 테스트하지 않습니다.
 
-일반적으로 양식에 원하는 필드가 있는지 테스트하고 적절한 레이블과 도움말을 디스플레이하는지 확인해야 합니다. Django에서 (사용자 정의 필드와 유효성 검사를 생성하지 않았다면) 필드 유형의 유효성을 올바르게 검사하는지, 즉 이메일 필드에서는 이메일만을 허용하는지 테스트할 필요가 없습니다. 그러나 필드에 대해 예상되는 추가 유효성 검사와 코드에서 오류를 생성할 메시지는 테스트해야 합니다.
+일반적으로 양식에 원하는 필드가 있는지 테스트하고 적절한 레이블과 도움말을 디스플레이하는지 확인해야 합니다. Django에서 (사용자 정의 필드와 유효성 검사를 생성하지 않았다면) 필드 유형의 유효성을 올바르게 검사하는지, 즉 이메일 필드에서는 이메일만을 허용하는지 테스트할 필요는 없습니다. 그러나 필드에 대해 예상되는 추가 유효성 검사와 코드에서 오류를 생성할 메시지는 테스트해야 합니다.
 
 책을 갱신하는 양식에는 갱신 날짜에 대한 필드가 하나 있으며 이 필드에는 확인해야 할 레이블과 도움말 텍스트가 있습니다.
 
@@ -517,7 +517,7 @@ class AuthorListViewTest(TestCase):
         self.assertTrue(len(response.context['author_list']) == 3)
 ```
 
-모든 테스트는 (TestCase 파생 클래스에 속한) 클라이언트를 사용하여 GET 요청을 시뮬레이트하고 응답을 받습니다. 첫 번째 버전은 지정된 URL (참고 사항, 도메인이 없는 지정된 경로)을 확인하는 반면 두 번째 버전은 URL 설정에 있는 이름으로부터 URL을 생성합니다.
+모든 테스트는 (TestCase 서브클래스에 속한) 클라이언트를 사용하여 GET 요청을 시뮬레이트하고 응답을 받습니다. 첫 번째 버전은 지정된 URL (참고 사항, 도메인이 없는 지정된 경로)을 확인하는 반면 두 번째 버전은 URL 설정에 있는 이름으로부터 URL을 생성합니다.
 
 ```python
 response = self.client.get('/catalog/authors/')
@@ -526,11 +526,11 @@ response = self.client.get(reverse('authors'))
 
 응답을 받으면 상태 코드, 사용된 템플리트, 응답의 페이지 매김 여부, 반환된 항목 수 및 총 항목 수를 응답에 쿼리합니다.
 
-위에서 살펴본 가장 흥미로운 변수는 <code>response.context</code>입니다. 이는 뷰가 템플리트로 전달하는 컨텍스트 변수입니다. 이는 템플리트가 필요한 모든 데이터를 확보하고 있는지 확인할 수 있기 때문에 테스트에 매우 유용합니다. 즉, 의도한 템플리트와 템플리트에서 얻은 데이터를 확인할 수 있습니다. 이는 렌더링 문제가 템플릿 때문이라는 것을 확인하는 데 많은 도움을 줍니다.
+위에서 살펴본 가장 흥미로운 변수는 <code>response.context</code>입니다. 이는 뷰가 템플리트로 전달하는 컨텍스트 변수입니다. 이는 템플리트가 필요한 모든 데이터를 확보하고 있는지 확인할 수 있기 때문에 테스트에 매우 유용합니다. 즉, 의도한 템플리트와 템플리트에서 얻은 데이터를 확인할 수 있습니다. 이는 렌더링 문제가 템플리트 때문이라는 것을 확인하는 데 많은 도움을 줍니다.
 
 ##### 로그인한 사용자로 제한된 뷰
 
-어떤 경우에는 로그인한 사용자로 제한된 뷰를 테스트하려고 할 수 있습니다. 예를 들어, `LoanedBooksByUserListView`는 이전 뷰와 매우 유사하지만 로그인한 사용자만 사용할 수 있으며 현재 사용자가 대여한 `BookInstance` 레코드를 'on loan'이며 "가장 오래된 것부터"라는 순서로 디스플레이합니다.
+어떤 경우에는 로그인한 사용자로 제한된 뷰를 테스트하려고 할 수 있습니다. 예를 들어, `LoanedBooksByUserListView`는 이전 뷰와 매우 유사하지만 로그인한 사용자만 사용할 수 있으며 현재 사용자가 대여한 `BookInstance` 레코드를 'on loan'이며 "가장 오래된" 순서로 디스플레이합니다.
 
 ```python
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -723,9 +723,10 @@ def renew_book_librarian(request, pk):
 
     return render(request, 'catalog/book_renew_librarian.html', context)
 ```
+
 <code>can_mark_returned</code> 권한을 가진 사용자만 뷰를 사용할 수 있는지 테스트하고 존재하지 않는 `BookInstance`를 갱신하려고 하면 HTTP 404 오류 페이지로 리디렉션됩니다. 양식의 초기 값이 3 주 후의 날짜로 되어 있는지 확인하고 유효성 검사가 성공하면 "대여한 모든 도서" 뷰로 리디렉션됩니다. validation-fail 테스트를 검사하는 과정에서 양식이 적절한 오류 메시지를 보내고 있는지 확인합니다.
 
-<b>/catalog/tests/test_views.py</b> 끝에 테스트 클래스(아래 참조)의 첫 번째 부분을 추가하십시오 . 이렇게하면 사용자 두명와 책 인스턴스 둘이 작성되지만 오직 한 사용자에게 뷰를 접근하는 데 필요한 권한을 제공합니다.
+<b>/catalog/tests/test_views.py</b> 끝에 테스트 클래스(아래 참조)의 첫 번째 부분을 추가하십시오. 이렇게하면 사용자 두명와 책 인스턴스 둘이 작성되지만 오직 한 사용자에게 뷰를 접근하는 데 필요한 권한을 제공합니다.
 
 ```python
 import uuid
@@ -791,7 +792,7 @@ class RenewBookInstancesViewTest(TestCase):
         test_user2.save()
 ```
 
-테스트 클래스의 끝에 다음 테스트를 추가하십시오. 적절한 권한을 가진 사용자(testuser2)만 뷰를 접근할 수 있는지 확인합니다. 사용자가 로그인하지 않았을 때, 사용자가 로그인했지만 권한이 없는 경우, 권한이 있지만 대출자가 아닌 경우 (성공해야 함), 존재하지 않는 `BookInstance`에 접근을 시도할 때  어떤 일이 발생하는지 등 모든 경우를 확인합니다. 해당 템플리트를 사용하는 지도 확인합니다.
+테스트 클래스의 끝에 다음 테스트를 추가하십시오. 적절한 권한을 가진 사용자(testuser2)만 뷰를 접근할 수 있는지 확인합니다. 사용자가 로그인하지 않았을 때, 사용자가 로그인했지만 권한이 없는 경우, 권한이 있지만 대출자가 아닌 경우 (성공해야 함), 존재하지 않는 `BookInstance`에 접근을 시도할 때 어떤 일이 발생하는지 등 모든 경우를 확인합니다. 해당 템플리트를 사용하는 지도 확인합니다.
 
 ```python
 def test_redirect_if_not_logged_in(self):
@@ -849,7 +850,7 @@ def test_form_renewal_date_initially_has_date_three_weeks_in_future(self):
 
 > **!** 아래처럼 다음 테스트 메소드을 추가하십시오. 이는 양식의 초기 날짜가 3 주 후인지 확인합니다. 양식 필드의 초기값을 접근하는 방법에 유의하십시오.
 
-다음 테스트 (클래스에 이를 추가)는 갱신을 성공하면 빌린 모든 책 목록으로  뷰 리다이렉트을 확인합니다. 여기서 차이점은 클라이언트를 사용하여 데이터를 `POST`하는 방법을 처음 보여줍니다. post <i>데이터</i>는 post 함수의 두 번째 인수이며, key/value 사전으로 지정됩니다.
+다음 테스트 (클래스에 이를 추가)는 갱신을 성공하면 빌린 모든 책 목록으로 뷰 리다이렉트을 확인합니다. 여기서 차이점은 클라이언트를 사용하여 데이터를 `POST`하는 방법을 처음 보여줍니다. post <i>데이터</i>는 post 함수의 두 번째 인수이며, key/value 사전으로 지정됩니다.
 
 ```python
 def test_redirects_to_all_borrowed_book_list_on_success(self):
@@ -860,6 +861,7 @@ def test_redirects_to_all_borrowed_book_list_on_success(self):
 ```
 
 > **!** <i>모든 대여 도서</i> 뷰를 <i>도전 과제</i>에 추가하였으며, 대신 코드가 홈 페이지 '/'로 리디렉션될 수 있습니다. 그렇다면 테스트 코드의 마지막 두 줄을 아래 코드와 같이 수정하십시오. 요청에서 <code>follow=True</code>는 요청이 최종 목적 URL을 반환하도록 합니다 (따라서 `/`가 아니라 `/catalog/`임을 확인합니다).
+
 ```python
 response = self.client.post(reverse('renew-book-librarian', kwargs={'pk':self.test_bookinstance1.pk,}), {'renewal_date':valid_date_in_future}, follow=True )
  self.assertRedirects(response, '/catalog/')
@@ -887,18 +889,18 @@ def test_form_invalid_renewal_date_past(self):
 
 #### 템플리트
 
-Django는 테스트 API를 제공하여 뷰에 의해 해당 템플리트가 호출되는지 확인하고 정보를 정확히 전송하고 있는지 확인할 수있게 합니다. 그러나 Django에서 HTML 출력이 예상대로 렌더링되는 지 테스트하기 위한 특정 API 지원은 없습니다.
+Django는 테스트 API를 제공하여 뷰에 의해 해당 템플리트가 호출되는지 확인하고 정보를 정확히 전송하고 있는지 확인할 수 있습니다. 그러나 Django에서 HTML 출력이 예상대로 렌더링되는 지 테스트하기 위한 특정 API 지원은 없습니다.
 
 ---
 
 ### 추천 테스트 도구들
 
-Django의 테스트 프레임워크는 효과적인 유닛과 통합 테스트를 작성하는 데 도움을 줄 수 있습니다. 근본적인 **unittest** 프레임워크가 수행할 수있는 작업의 단면만 살짝 보았고, 장고의 추가 사항은 말할 것도 없습니다. (예를 들어 [unittest.mock](https://docs.python.org/3.5/library/unittest.mock-examples.html)을 사용하여 서드 파티 라이브러리를  패치하는 방법을 체크 아웃하여 코드를 보다 철저하게 테스트할 수 있습니다).
+Django의 테스트 프레임워크는 효과적인 유닛과 통합 테스트를 작성하는 데 도움을 줄 수 있습니다. 근본적인 **unittest** 프레임워크가 수행할 수있는 작업의 단면만 살짝 보았고, Django의 추가 사항은 말할 것도 없습니다. (예를 들어 [unittest.mock](https://docs.python.org/3.5/library/unittest.mock-examples.html)을 사용하여 서드 파티 라이브러리를 패치하는 방법을 체크 아웃하여 코드를 보다 철저하게 테스트할 수 있습니다).
 
 사용 가능한 많은 테스트 도구들이 있지만 다음 두 가지를 추천합니다.
 
-- [Coverage](http://coverage.readthedocs.io/en/latest/): 이 Python 도구는 테스트에서 실제로 실행된 코드의 양을 보고합니다. 특히 시작하기에 유용하며 테스트해야 할 내용을 정확하게 확인하려고 합니다.
-- [Selenium](https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Your_own_automation_environment)는 실제 브라우저에서 테스트를 자동화하는 프레임워크입니다. 이 도구를 사용하면 사이트와 상호 작용하는 실제 사용자를 시뮬레이트할 수 있으며, 사이트 테스트(통합 테스트의 다음 단계)를 위한 훌륭한 프레임워크를 제공합니다.
+-	[Coverage](http://coverage.readthedocs.io/en/latest/): 이 Python 도구는 테스트에서 실제로 실행된 코드의 양을 보고합니다. 특히 시작하기에 유용하며 테스트해야 할 내용을 정확하게 확인하려고 합니다.
+-	[Selenium](https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Your_own_automation_environment)는 실제 브라우저에서 테스트를 자동화하는 프레임워크입니다. 이 도구를 사용하면 사이트와 상호 작용하는 실제 사용자를 시뮬레이트할 수 있으며, 사이트 테스트(통합 테스트의 다음 단계)를 위한 훌륭한 프레임워크를 제공합니다.
 
 ---
 
@@ -920,11 +922,11 @@ class AuthorCreate(PermissionRequiredMixin, CreateView):
 
 ### 요약
 
-테스트 코드를 작성하는 것은 재미도 매력도 없으므로 결과적으로 웹사이트를 만들 때 종종 남겨놀 수 있습니다. 그러나 변경 후에도 코드를 공개하는 것이 안전하고 유지 관리에 비용 효율적이라는 것을 확신하는 것은 중요합니다.
+테스트 코드를 작성하는 것은 재미도 매력도 없으므로 결과적으로 웹사이트를 만들 때 종종 남겨놀 수 있습니다. 그러나 변경 후에도 코드를 공개하는 것이 안전하고 유지 관리에 비용 효율적이라는 것을 확신하는 것이 중요합니다.
 
-이 부에서는 모델, 폼 및 뷰에 대한 테스트를 작성하고 실행하는 방법을 보여줍니다. 가장 중요한 것은 테스트해야 할 사항에 대한 간략한 요약을 제공 했습니다. 이는 언제 시작 하느냐에 따라 가장 힘든 일이 될 수 있습니다. 알아야 할 것이 많지만, 이미 배운 것만을 사용해서 라도 웹사이트에 대한 효과적인 단위 테스트를 만들 수 있어야 합니다.
+이 단원에서는 모델, 폼 및 뷰에 대한 테스트를 작성하고 실행하는 방법을 학습하였습니다. 가장 중요한 것은 테스트해야 할 사항에 대한 간략한 요약입니다. 이는 언제 시작 하느냐에 따라 가장 힘든 일이 될 수 있습니다. 알아야 할 것이 많지만, 이미 배운 것만을 사용해서 라도 웹사이트에 대한 효과적인 단위 테스트를 만들 수 있어야 합니다.
 
-다음인 마지막 부에서는 훌륭한 (그리고 완전히 테스트 된) Django 웹사이트 배포 방법을 보여줍니다.
+다음인 마지막 단원에서는 훌륭한 (그리고 완전히 테스트 된) Django 웹사이트 배포 방법을 보여줍니다.
 
 ---
 
@@ -940,19 +942,19 @@ class AuthorCreate(PermissionRequiredMixin, CreateView):
 
 ---
 
-### 이 튜토리얼은 다음 부들로 구성되어 있습니다.
+### 이 튜토리얼은 다음과 같이 구성되어 있습니다.
 
 -	[Django 소개](introduction.md)
 -	[Django 개발 환경 설정](developmentEnvironment.md)
 -	[Django 튜토리얼: The Local Library website](tutorialLocalLibraryWebsite.md)
 -	[Django 튜토리얼 2부: 웹사이트 골조 만들기](skeletonWebsite.md)
 -	[Django 튜토리얼 3부: 모델](models.md)
--	[Django 튜토리얼 4부: Django 관리 사이트](adminSite.md)
+-	[Django 튜토리얼 4부: Django admin 사이트](adminSite.md)
 -	[Django 튜토리얼 5부: 홈 페이지 만들기](homePage.md)
 -	[Django 튜토리얼 6부: 일반 목록과 상세 보기](genericViews.md)
 -	[Django 튜토리얼 7부: 세션 프레임워크](sessions.md)
--	[Django 튜토리얼 8부: 사용자 인증 및 권한](authentication.md)
--	[Django 튜토리얼 9부: 양식 작업](forms.md)
--	[Django 튜토리얼 10부: Django 웹 응용프로그램 테스팅](testing.md)
--	[Django 튜토리얼 11부: 운영으로 Django 전개](deployment.md)
--	[Django 웹 응용프로그램 보안](webApplicationSecurity.md)
+-	[Django 튜토리얼 8부: 사용자 인증과 권한관리](authentication.md)
+-	[Django 튜토리얼 9부: 양식](forms.md)
+-	[Django 튜토리얼 10부: Django 웹 어플리케이션 테스팅](testing.md)
+-	[Django 튜토리얼 11부: 프로덕션으로 Django 전개](deployment.md)
+-	[Django 웹 어플리케이션 보안](webApplicationSecurity.md)
